@@ -230,7 +230,7 @@ fun SecureIoTApp(viewModel: SecureIoTViewModel) {
 
             CyberButton(
                 text = if (state.armed) "DESARMAR SISTEMA" else "ARMAR SISTEMA",
-                icon = if (state.armed) Icons.Default.Home else Icons.Default.Lock,
+                icon = if (state.armed) Icons.Default.Lock else Icons.Default.Home,
                 isActive = state.armed,
                 activeColor = NeonRed,
                 inactiveColor = NeonCyan,
@@ -241,7 +241,7 @@ fun SecureIoTApp(viewModel: SecureIoTViewModel) {
 
             CyberButton(
                 text = if (state.lightOn) "LUZ: LIGADA" else "LUZ: DESLIGADA",
-                icon = if (state.lightOn) Icons.Default.Star else Icons.Default.Notifications,
+                icon = Icons.Default.Star,
                 isActive = state.lightOn,
                 activeColor = Color(0xFFFFD700),
                 inactiveColor = Color.Gray,
