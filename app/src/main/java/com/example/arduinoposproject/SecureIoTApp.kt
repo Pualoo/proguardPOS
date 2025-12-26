@@ -1,6 +1,5 @@
 package com.example.arduinoposproject
 
-import androidx.compose.animation.animateColor
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
@@ -18,7 +17,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
@@ -26,9 +24,7 @@ import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
@@ -43,18 +39,14 @@ import org.eclipse.paho.client.mqttv3.MqttMessage
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
 import org.json.JSONObject
 import java.util.UUID
-import kotlin.math.cos
-import kotlin.math.sin
 
 
 val CyberBlack = Color(0xFF050505)
 val CyberDark = Color(0xFF121212)
 val NeonCyan = Color(0xFF00E5FF)
-val NeonPink = Color(0xFFF50057)
 val NeonGreen = Color(0xFF00FF00)
 val NeonRed = Color(0xFFFF0000)
 val NeonBlue = Color(0xFF2979FF)
-val GlassWhite = Color(0x1AFFFFFF)
 
 data class SecureIoTState(
     val temp: Double = 0.0,
