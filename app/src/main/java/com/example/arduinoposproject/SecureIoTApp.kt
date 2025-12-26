@@ -7,6 +7,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.*
 import androidx.compose.animation.core.*
 import androidx.compose.ui.Alignment
@@ -42,7 +45,9 @@ data class SecureIoTState(
     val armed: Boolean = false,
     val alarm: Boolean = false,
     val lightOn: Boolean = false,
-    val connectionStatus: String = "Desconectado..."
+    val connectionStatus: String = "Desconectado...",
+    val brokerUrl: String = "tcp://broker.hivemq.com:1883",
+    val isConfiguring: Boolean = false
 )
 
 class SecureIoTViewModel : ViewModel() {
@@ -50,7 +55,7 @@ class SecureIoTViewModel : ViewModel() {
     val state: StateFlow<SecureIoTState> = _state.asStateFlow()
 
     private var client: MqttClient? = null
-    private val broker = "tcp://broker.hivemq.com:1883"
+    // removed hardcoded broker in favor of state.brokerUrl
     private val topicSensor = "pos_iot/sensor"
     private val topicCommand = "pos_iot/command"
 
@@ -61,9 +66,16 @@ class SecureIoTViewModel : ViewModel() {
     private fun connect() {
         viewModelScope.launch {
             try {
-                _state.value = _state.value.copy(connectionStatus = "Conectando...")
+                // Disconnect existing client if any
+                try {
+                    if (client?.isConnected == true) {
+                        client?.disconnect()
+                    }
+                } catch (e: Exception) { e.printStackTrace() }
+
+                _state.value = _state.value.copy(connectionStatus = "Conectando a ${_state.value.brokerUrl}...")
                 val clientId = "android_" + UUID.randomUUID().toString().substring(0, 8)
-                client = MqttClient(broker, clientId, MemoryPersistence())
+                client = MqttClient(_state.value.brokerUrl, clientId, MemoryPersistence())
 
                 val options = MqttConnectOptions()
                 options.isCleanSession = true
@@ -128,6 +140,15 @@ class SecureIoTViewModel : ViewModel() {
         connect()
     }
 
+    fun updateBrokerUrl(newUrl: String) {
+        _state.value = _state.value.copy(brokerUrl = newUrl, isConfiguring = false)
+        retryConnection()
+    }
+
+    fun toggleConfig() {
+        _state.value = _state.value.copy(isConfiguring = !_state.value.isConfiguring)
+    }
+
     private fun sendCommand(cmd: String) {
         viewModelScope.launch {
             try {
@@ -161,13 +182,56 @@ fun SecureIoTApp(viewModel: SecureIoTViewModel) {
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "🔐 SecureIoT Home",
-                color = AccentColor,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 20.dp)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "🔐 SecureIoT Home",
+                    color = AccentColor,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Row {
+                    IconButton(onClick = { viewModel.retryConnection() }) {
+                        Icon(Icons.Filled.Refresh, contentDescription = "Reconnect", tint = TextColor)
+                    }
+                    IconButton(onClick = { viewModel.toggleConfig() }) {
+                        Icon(Icons.Filled.Settings, contentDescription = "Config", tint = AccentColor)
+                    }
+                }
+            }
+
+            if (state.isConfiguring) {
+                var newUrl by remember { mutableStateOf(state.brokerUrl) }
+                AlertDialog(
+                    onDismissRequest = { viewModel.toggleConfig() },
+                    title = { Text("Configurar Servidor MQTT") },
+                    text = {
+                        Column {
+                            Text("URL do Broker:", color = TextColor)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            TextField(
+                                value = newUrl,
+                                onValueChange = { newUrl = it },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(onClick = { viewModel.updateBrokerUrl(newUrl) }) {
+                            Text("Salvar e Conectar")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { viewModel.toggleConfig() }) {
+                            Text("Cancelar")
+                        }
+                    }
+                )
+            }
 
             StatusCard(state)
 
@@ -235,8 +299,15 @@ fun SecureIoTApp(viewModel: SecureIoTViewModel) {
             )
             
             if (state.connectionStatus.contains("Falha")) {
-                 TextButton(onClick = { viewModel.retryConnection() }) {
-                     Text("Tentar novamente", color = AccentColor)
+                 Row(
+                     horizontalArrangement = Arrangement.spacedBy(8.dp)
+                 ) {
+                     TextButton(onClick = { viewModel.retryConnection() }) {
+                         Text("Tentar novamente", color = AccentColor)
+                     }
+                     TextButton(onClick = { viewModel.toggleConfig() }) {
+                         Text("Configurar Servidor", color = TextColor)
+                     }
                  }
             }
         }
