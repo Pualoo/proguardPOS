@@ -328,7 +328,7 @@ fun Header(viewModel: SecureIoTViewModel, state: SecureIoTState) {
     ) {
         Column {
             Text(
-                text = "SECURELO",
+                text = "SecureIoT",
                 color = NeonCyan,
                 fontSize = 28.sp,
                 fontWeight = FontWeight.ExtraBold,
